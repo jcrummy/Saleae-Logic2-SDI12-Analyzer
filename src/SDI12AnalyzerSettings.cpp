@@ -1,19 +1,19 @@
-#include "SimpleSerialAnalyzerSettings.h"
+#include "SDI12AnalyzerSettings.h"
 #include <AnalyzerHelpers.h>
 
 
-SimpleSerialAnalyzerSettings::SimpleSerialAnalyzerSettings()
+SDI12AnalyzerSettings::SDI12AnalyzerSettings()
 :	mInputChannel( UNDEFINED_CHANNEL ),
-	mBitRate( 9600 ),
+	mBitRate( 1200 ),
 	mInputChannelInterface(),
 	mBitRateInterface()
 {
-	mInputChannelInterface.SetTitleAndTooltip( "Serial", "Standard Simple Serial" );
+	mInputChannelInterface.SetTitleAndTooltip( "Serial", "Standard SDI-12" );
 	mInputChannelInterface.SetChannel( mInputChannel );
 
 	mBitRateInterface.SetTitleAndTooltip( "Bit Rate (Bits/S)",  "Specify the bit rate in bits per second." );
-	mBitRateInterface.SetMax( 6000000 );
-	mBitRateInterface.SetMin( 1 );
+	mBitRateInterface.SetMax( 1200 );
+	mBitRateInterface.SetMin( 1200 );
 	mBitRateInterface.SetInteger( mBitRate );
 
 	AddInterface( &mInputChannelInterface );
@@ -27,28 +27,28 @@ SimpleSerialAnalyzerSettings::SimpleSerialAnalyzerSettings()
 	AddChannel( mInputChannel, "Serial", false );
 }
 
-SimpleSerialAnalyzerSettings::~SimpleSerialAnalyzerSettings()
+SDI12AnalyzerSettings::~SDI12AnalyzerSettings()
 {
 }
 
-bool SimpleSerialAnalyzerSettings::SetSettingsFromInterfaces()
+bool SDI12AnalyzerSettings::SetSettingsFromInterfaces()
 {
 	mInputChannel = mInputChannelInterface.GetChannel();
 	mBitRate = mBitRateInterface.GetInteger();
 
 	ClearChannels();
-	AddChannel( mInputChannel, "Simple Serial", true );
+	AddChannel( mInputChannel, "SDI-12", true );
 
 	return true;
 }
 
-void SimpleSerialAnalyzerSettings::UpdateInterfacesFromSettings()
+void SDI12AnalyzerSettings::UpdateInterfacesFromSettings()
 {
 	mInputChannelInterface.SetChannel( mInputChannel );
 	mBitRateInterface.SetInteger( mBitRate );
 }
 
-void SimpleSerialAnalyzerSettings::LoadSettings( const char* settings )
+void SDI12AnalyzerSettings::LoadSettings( const char* settings )
 {
 	SimpleArchive text_archive;
 	text_archive.SetString( settings );
@@ -57,12 +57,12 @@ void SimpleSerialAnalyzerSettings::LoadSettings( const char* settings )
 	text_archive >> mBitRate;
 
 	ClearChannels();
-	AddChannel( mInputChannel, "Simple Serial", true );
+	AddChannel( mInputChannel, "SDI-12", true );
 
 	UpdateInterfacesFromSettings();
 }
 
-const char* SimpleSerialAnalyzerSettings::SaveSettings()
+const char* SDI12AnalyzerSettings::SaveSettings()
 {
 	SimpleArchive text_archive;
 

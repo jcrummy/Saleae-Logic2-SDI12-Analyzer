@@ -1,17 +1,17 @@
-#ifndef SIMPLESERIAL_ANALYZER_H
-#define SIMPLESERIAL_ANALYZER_H
+#ifndef SDI12_ANALYZER_H
+#define SDI12_ANALYZER_H
 
 #include <Analyzer.h>
-#include "SimpleSerialAnalyzerSettings.h"
-#include "SimpleSerialAnalyzerResults.h"
-#include "SimpleSerialSimulationDataGenerator.h"
+#include "SDI12AnalyzerSettings.h"
+#include "SDI12AnalyzerResults.h"
+#include "SDI12SimulationDataGenerator.h"
 #include <memory>
 
-class ANALYZER_EXPORT SimpleSerialAnalyzer : public Analyzer2
+class ANALYZER_EXPORT SDI12Analyzer : public Analyzer2
 {
 public:
-	SimpleSerialAnalyzer();
-	virtual ~SimpleSerialAnalyzer();
+	SDI12Analyzer();
+	virtual ~SDI12Analyzer();
 
 	virtual void SetupResults();
 	virtual void WorkerThread();
@@ -23,11 +23,11 @@ public:
 	virtual bool NeedsRerun();
 
 protected: //vars
-	SimpleSerialAnalyzerSettings mSettings;
-	std::unique_ptr<SimpleSerialAnalyzerResults> mResults;
+	SDI12AnalyzerSettings mSettings;
+	std::unique_ptr<SDI12AnalyzerResults> mResults;
 	AnalyzerChannelData* mSerial;
 
-	SimpleSerialSimulationDataGenerator mSimulationDataGenerator;
+	SDI12SimulationDataGenerator mSimulationDataGenerator;
 	bool mSimulationInitilized;
 };
 
@@ -35,4 +35,4 @@ extern "C" ANALYZER_EXPORT const char* __cdecl GetAnalyzerName();
 extern "C" ANALYZER_EXPORT Analyzer* __cdecl CreateAnalyzer( );
 extern "C" ANALYZER_EXPORT void __cdecl DestroyAnalyzer( Analyzer* analyzer );
 
-#endif //SIMPLESERIAL_ANALYZER_H
+#endif //SDI12_ANALYZER_H
