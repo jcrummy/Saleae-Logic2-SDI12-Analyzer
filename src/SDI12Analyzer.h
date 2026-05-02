@@ -21,7 +21,9 @@ public:
 
 	virtual void SetupResults();
 	virtual void WorkerThread();
-	virtual void ReadNextWord();
+	virtual U8 ReadNextWord();
+	virtual bool AtMark();
+	virtual bool AdvanceToEndOfBreak();
 
 	virtual U32 GenerateSimulationData( U64 newest_sample_requested, U32 sample_rate, SimulationChannelDescriptor** simulation_channels );
 	virtual U32 GetMinimumSampleRateHz();
@@ -36,6 +38,11 @@ protected: //vars
 
 	SDI12SimulationDataGenerator mSimulationDataGenerator;
 	bool mSimulationInitilized;
+
+	U64 samples_per_bit;
+	U64 samples_per_half_bit;
+	U64 minimum_break_width;
+	U64 minimum_mark_width;
 };
 
 extern "C" ANALYZER_EXPORT const char* __cdecl GetAnalyzerName();
