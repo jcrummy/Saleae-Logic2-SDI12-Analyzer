@@ -34,6 +34,9 @@ void SDI12Analyzer::WorkerThread()
 {
     U32 state = LOOKING_FOR_BREAK;
 
+    // int packet_pointer;
+    // char packet[80];
+
     for( ;; )
     {
         switch( state )
@@ -42,16 +45,23 @@ void SDI12Analyzer::WorkerThread()
             if( AdvanceToEndOfBreak() )
             {
                 state = RECORDER_COMMAND;
+                // packet_pointer = 0;
             }
             break;
 
         case RECORDER_COMMAND:
+            // U64 packet_start = mSerial->GetSampleNumber();
 
             // Read the next word
             ReadNextWord();
+            // packet[packet_pointer] = ReadNextWord();
+            // packet_pointer++;
 
             if( AtMark() )
             {
+                // packet[packet_pointer] = 0x00;
+                // mResults->AddResultString(packet);
+                // packet_pointer = 0;
                 state = SENSOR_RESPONSE;
             }
             break;
@@ -109,9 +119,11 @@ U8 SDI12Analyzer::ReadNextWord()
 {
     // Read in the next word
     U8 data = 0x7F;
+    U8 parity_count = 0;
     mSerial->AdvanceToNextEdge(); // rising edge -- beginning of the start bit
 
     U64 starting_sample = mSerial->GetSampleNumber();
+    mResults->AddMarker( mSerial->GetSampleNumber() + samples_per_half_bit, AnalyzerResults::Start, mSettings.mInputChannel );
 
     mSerial->Advance( samples_per_bit + samples_per_half_bit );
 
@@ -122,14 +134,32 @@ U8 SDI12Analyzer::ReadNextWord()
 
         // Data comes in as least significant to most significant, low is 1
         if( mSerial->GetBitState() == BIT_HIGH )
+        {
             data &= ~( ( U32 )1 << i );
+            parity_count++;
+        }
 
         mSerial->Advance( samples_per_bit );
     }
 
-    // It is already advanced to the parity bit
+    // Check parity
+    if( mSerial->GetBitState() == BIT_HIGH )
+    {
+        parity_count++;
+    }
+    bool parity_good = parity_count % 2 == 0;
+
+    if( parity_good )
+    {
+        mResults->AddMarker( mSerial->GetSampleNumber(), AnalyzerResults::X, mSettings.mInputChannel );
+    }
+    else
+    {
+        mResults->AddMarker( mSerial->GetSampleNumber(), AnalyzerResults::ErrorX, mSettings.mInputChannel );
+    }
     // Advance to the stop bit
     mSerial->Advance( samples_per_bit );
+    mResults->AddMarker( mSerial->GetSampleNumber(), AnalyzerResults::Stop, mSettings.mInputChannel );
 
     // we have a byte to save.
     Frame frame;
@@ -141,7 +171,7 @@ U8 SDI12Analyzer::ReadNextWord()
     mResults->AddFrame( frame );
     mResults->CommitResults();
     ReportProgress( frame.mEndingSampleInclusive );
-	return data;
+    return data;
 }
 
 bool SDI12Analyzer::AtMark()
