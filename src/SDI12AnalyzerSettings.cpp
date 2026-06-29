@@ -3,7 +3,8 @@
 
 
 SDI12AnalyzerSettings::SDI12AnalyzerSettings()
-    : mInputChannel( UNDEFINED_CHANNEL ), mBitRate( 1200 ), mInputChannelInterface(), mBitRateInterface()
+    : mInputChannel( UNDEFINED_CHANNEL ), mBitRate( 1200 ), mShowBreak( false ), mTimingTolerance( 400 ), mInputChannelInterface(),
+      mBitRateInterface()
 {
     mInputChannelInterface.SetTitleAndTooltip( "Serial", "Standard SDI-12" );
     mInputChannelInterface.SetChannel( mInputChannel );
@@ -14,10 +15,20 @@ SDI12AnalyzerSettings::SDI12AnalyzerSettings()
     mBitRateInterface.SetInteger( mBitRate );
 
     mShowBreakInterface.SetTitleAndTooltip( "Show break", "Check if you want the break explicitly shown." );
+    mShowBreakInterface.SetValue( mShowBreak );
+
+    mTimingToleranceInterface.SetTitleAndTooltip(
+        "Timing tolerance (us)",
+        "Extra timing margin in microseconds applied to break/marking detection. SDI-12 allows +/-400 us; increase this if a "
+        "low-pass filter on the data line skews edge timing." );
+    mTimingToleranceInterface.SetMax( 2000 );
+    mTimingToleranceInterface.SetMin( 0 );
+    mTimingToleranceInterface.SetInteger( mTimingTolerance );
 
     AddInterface( &mInputChannelInterface );
     AddInterface( &mBitRateInterface );
 	AddInterface( &mShowBreakInterface );
+	AddInterface( &mTimingToleranceInterface );
 
     AddExportOption( 0, "Export as text/csv file" );
     AddExportExtension( 0, "text", "txt" );
@@ -36,6 +47,7 @@ bool SDI12AnalyzerSettings::SetSettingsFromInterfaces()
     mInputChannel = mInputChannelInterface.GetChannel();
     mBitRate = mBitRateInterface.GetInteger();
 	mShowBreak = mShowBreakInterface.GetValue();
+	mTimingTolerance = mTimingToleranceInterface.GetInteger();
 
     ClearChannels();
     AddChannel( mInputChannel, "SDI-12", true );
@@ -47,6 +59,8 @@ void SDI12AnalyzerSettings::UpdateInterfacesFromSettings()
 {
     mInputChannelInterface.SetChannel( mInputChannel );
     mBitRateInterface.SetInteger( mBitRate );
+	mShowBreakInterface.SetValue( mShowBreak );
+	mTimingToleranceInterface.SetInteger( mTimingTolerance );
 }
 
 void SDI12AnalyzerSettings::LoadSettings( const char* settings )
@@ -56,6 +70,13 @@ void SDI12AnalyzerSettings::LoadSettings( const char* settings )
 
     text_archive >> mInputChannel;
     text_archive >> mBitRate;
+
+    // Defaults first, so settings saved by an older build (which stored only the two
+    // fields above) still load cleanly; the reads below leave them untouched on failure.
+    mShowBreak = false;
+    mTimingTolerance = 400;
+    text_archive >> mShowBreak;
+    text_archive >> mTimingTolerance;
 
     ClearChannels();
     AddChannel( mInputChannel, "SDI-12", true );
@@ -69,6 +90,8 @@ const char* SDI12AnalyzerSettings::SaveSettings()
 
     text_archive << mInputChannel;
     text_archive << mBitRate;
+    text_archive << mShowBreak;
+    text_archive << mTimingTolerance;
 
     return SetReturnString( text_archive.GetString() );
 }

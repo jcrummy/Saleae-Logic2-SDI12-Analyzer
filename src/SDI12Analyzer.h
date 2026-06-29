@@ -48,6 +48,7 @@ protected: //vars
 	U64 samples_per_half_bit;
 	U64 minimum_break_width;
 	U64 minimum_mark_width;
+	U64 timing_tolerance;
 };
 
 extern "C" ANALYZER_EXPORT const char* __cdecl GetAnalyzerName();

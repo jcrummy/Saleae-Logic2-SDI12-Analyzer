@@ -27,14 +27,26 @@ void SDI12Analyzer::SetupResults()
     samples_per_bit = sample_rate_hz / mSettings.mBitRate;
     samples_per_half_bit = U64( 0.5 * double( samples_per_bit ) );
 
-    // A character frame is 10 bit-times (start + 7 data + parity + stop) and always ends
-    // with a marking stop bit, so the line can be in continuous spacing for at most ~9
-    // bit-times (~7.5 ms @ 1200 baud) during valid traffic. Anything longer is a break.
-    // The SDI-12 break is >= 12 ms, so 11 bit-times sits safely above the worst-case
-    // character and well below a real break. (The old 6 ms threshold would mis-detect an
-    // all-spacing character as a break.)
-    minimum_break_width = 11 * samples_per_bit;
-    minimum_mark_width = U64( 0.00833 * double( sample_rate_hz ) ); // 8.33 ms
+    // SDI-12 allows +/-0.4 ms on its timing events, and a low-pass filter on the data line
+    // shifts edge crossings by a similar amount. This knob (default 400 us) is folded into
+    // the width thresholds below as margin so slightly stretched/squeezed events still
+    // classify correctly. Increase it for an aggressive filter.
+    timing_tolerance = U64( double( mSettings.mTimingTolerance ) * 1e-6 * double( sample_rate_hz ) );
+
+    // Break detection: a valid character frame always ends with a marking stop bit, so the
+    // line can hold continuous spacing for at most ~9 bit-times (~7.5 ms @ 1200 baud); a
+    // real SDI-12 break is >= 12 ms. Threshold = one full frame (10 bit-times) plus margin,
+    // which sits well above the worst-case character (even after the filter widens it) and
+    // well below a real break shortened by tolerance.
+    minimum_break_width = 10 * samples_per_bit + 2 * timing_tolerance;
+
+    // Mark detection: the gap between back-to-back characters is ~1 bit-time, while the
+    // marking that ends a command/response phase is >= 8.33 ms. The two are far apart, so
+    // we sit the threshold low in that gap (~4 bit-times + margin): high enough to ignore
+    // the inter-character gap, low enough that a real marking shortened by the filter and
+    // the -0.4 ms tolerance (down to ~7.9 ms) is still detected. The old value sat exactly
+    // at 8.33 ms, so an in-tolerance short marking was missed entirely.
+    minimum_mark_width = 4 * samples_per_bit + timing_tolerance;
 }
 
 void SDI12Analyzer::WorkerThread()
