@@ -7,8 +7,6 @@
 #include "SDI12SimulationDataGenerator.h"
 #include <memory>
 
-// Frame flag marking a frame as an SDI-12 break (rendered as '^'), so the results
-// layer can distinguish a break from a real data byte regardless of display base.
 #define FLAG_BREAK ( 1 << 0 )
 
 enum AnalyzerState {
@@ -25,7 +23,7 @@ public:
 
 	virtual void SetupResults();
 	virtual void WorkerThread();
-	virtual bool ReadNextWord(); // returns true if a break was detected and emitted instead of a data word
+	virtual bool ReadNextWord();
 	virtual bool AtMark();
 	virtual bool AdvanceToEndOfBreak();
 	void EmitBreakFrame( U64 starting_sample, U64 ending_sample );

@@ -18,8 +18,8 @@ class SDI12AnalyzerSettings : public AnalyzerSettings
 
     Channel mInputChannel;
     U32 mBitRate;
-	bool mShowBreak;
-	U32 mTimingTolerance; // extra timing margin in microseconds (SDI-12 spec allows +/-400 us)
+    bool mShowBreak;
+    U32 mTimingTolerance; // SDI-12 spec allows +/-400 us timing tolerance.
 
   protected:
     AnalyzerSettingInterfaceChannel mInputChannelInterface;

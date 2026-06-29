@@ -19,8 +19,7 @@ SDI12AnalyzerSettings::SDI12AnalyzerSettings()
 
     mTimingToleranceInterface.SetTitleAndTooltip(
         "Timing tolerance (us)",
-        "Extra timing margin in microseconds applied to break/marking detection. SDI-12 allows +/-400 us; increase this if a "
-        "low-pass filter on the data line skews edge timing." );
+        "Extra timing margin in microseconds applied to break/marking detection. SDI-12 allows +/-400 us; Increase to assist in debugging timing issues." );
     mTimingToleranceInterface.SetMax( 2000 );
     mTimingToleranceInterface.SetMin( 0 );
     mTimingToleranceInterface.SetInteger( mTimingTolerance );
@@ -71,8 +70,6 @@ void SDI12AnalyzerSettings::LoadSettings( const char* settings )
     text_archive >> mInputChannel;
     text_archive >> mBitRate;
 
-    // Defaults first, so settings saved by an older build (which stored only the two
-    // fields above) still load cleanly; the reads below leave them untouched on failure.
     mShowBreak = false;
     mTimingTolerance = 400;
     text_archive >> mShowBreak;

@@ -27,26 +27,16 @@ void SDI12Analyzer::SetupResults()
     samples_per_bit = sample_rate_hz / mSettings.mBitRate;
     samples_per_half_bit = U64( 0.5 * double( samples_per_bit ) );
 
-    // SDI-12 allows +/-0.4 ms on its timing events, and a low-pass filter on the data line
-    // shifts edge crossings by a similar amount. This knob (default 400 us) is folded into
+    // SDI-12 allows +/-0.4 ms on its timing events. This knob (default 0.4 ms) is folded into
     // the width thresholds below as margin so slightly stretched/squeezed events still
-    // classify correctly. Increase it for an aggressive filter.
+    // classify correctly.
     timing_tolerance = U64( double( mSettings.mTimingTolerance ) * 1e-6 * double( sample_rate_hz ) );
 
-    // Break detection: a valid character frame always ends with a marking stop bit, so the
-    // line can hold continuous spacing for at most ~9 bit-times (~7.5 ms @ 1200 baud); a
-    // real SDI-12 break is >= 12 ms. Threshold = one full frame (10 bit-times) plus margin,
-    // which sits well above the worst-case character (even after the filter widens it) and
-    // well below a real break shortened by tolerance.
-    minimum_break_width = 10 * samples_per_bit + 2 * timing_tolerance;
+    // Break detection: Defined at at least 12ms +- 0.4ms, so we set the threshold at 12ms - 0.4ms to catch all valid breaks.
+    minimum_break_width = U64( 0.012 * double( sample_rate_hz ) ) - timing_tolerance;  // 12 ms - 0.4ms tolerance
 
-    // Mark detection: the gap between back-to-back characters is ~1 bit-time, while the
-    // marking that ends a command/response phase is >= 8.33 ms. The two are far apart, so
-    // we sit the threshold low in that gap (~4 bit-times + margin): high enough to ignore
-    // the inter-character gap, low enough that a real marking shortened by the filter and
-    // the -0.4 ms tolerance (down to ~7.9 ms) is still detected. The old value sat exactly
-    // at 8.33 ms, so an in-tolerance short marking was missed entirely.
-    minimum_mark_width = 4 * samples_per_bit + timing_tolerance;
+    // Mark detection: Defined at at least 8.33ms +- 0.4ms, so we set the threshold at 8.33ms - 0.4ms to catch all valid marks.
+    minimum_mark_width = U64( 0.00833 * double( sample_rate_hz ) ) - timing_tolerance;  // 8.33 ms - 0.4ms tolerance
 }
 
 void SDI12Analyzer::WorkerThread()
@@ -141,11 +131,10 @@ bool SDI12Analyzer::ReadNextWord()
     U8 parity_count = 0;
     mSerial->AdvanceToNextEdge(); // rising edge -- beginning of the start bit (or a break)
 
-    // A break is a spacing (high) condition longer than any valid character frame. If we
-    // decoded it as data, all seven bits of 0x7F would be cleared, yielding a bogus 0x00
-    // ('\0'). Detect it here and emit a proper break frame ('^') instead.
+    // A break is a spacing (high) condition for atleast 12ms. Check for break condition before attempting 
+    // to decode characters.
     U64 high_run = mSerial->GetSampleOfNextEdge() - mSerial->GetSampleNumber();
-    if( high_run > minimum_break_width )
+    if( high_run >= minimum_break_width )
     {
         EmitBreakFrame( mSerial->GetSampleNumber(), mSerial->GetSampleOfNextEdge() );
         mSerial->AdvanceToNextEdge(); // step past the end of the break
@@ -202,7 +191,7 @@ bool SDI12Analyzer::ReadNextWord()
     mResults->AddFrame( frame );
     mResults->CommitResults();
     ReportProgress( frame.mEndingSampleInclusive );
-    return false; // a normal data word, not a break
+    return false; // found a normal data word, not a break
 }
 
 bool SDI12Analyzer::AtMark()
