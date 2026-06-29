@@ -21,6 +21,13 @@ void SDI12AnalyzerResults::GenerateBubbleText( U64 frame_index, Channel& channel
 	ClearResultStrings();
 	Frame frame = GetFrame( frame_index );
 
+	if( frame.mFlags & FLAG_BREAK )
+	{
+		AddResultString( "^" );
+		AddResultString( "Break" );
+		return;
+	}
+
 	char number_str[128];
 	AnalyzerHelpers::GetNumberString( frame.mData1, display_base, 8, number_str, 128 );
 	AddResultString( number_str );
@@ -43,10 +50,16 @@ void SDI12AnalyzerResults::GenerateExportFile( const char* file, DisplayBase dis
 		char time_str[128];
 		AnalyzerHelpers::GetTimeString( frame.mStartingSampleInclusive, trigger_sample, sample_rate, time_str, 128 );
 
-		char number_str[128];
-		AnalyzerHelpers::GetNumberString( frame.mData1, display_base, 8, number_str, 128 );
-
-		file_stream << time_str << "," << number_str << std::endl;
+		if( frame.mFlags & FLAG_BREAK )
+		{
+			file_stream << time_str << ",^" << std::endl;
+		}
+		else
+		{
+			char number_str[128];
+			AnalyzerHelpers::GetNumberString( frame.mData1, display_base, 8, number_str, 128 );
+			file_stream << time_str << "," << number_str << std::endl;
+		}
 
 		if( UpdateExportProgressAndCheckForCancel( i, num_frames ) == true )
 		{
@@ -63,6 +76,12 @@ void SDI12AnalyzerResults::GenerateFrameTabularText( U64 frame_index, DisplayBas
 #ifdef SUPPORTS_PROTOCOL_SEARCH
 	Frame frame = GetFrame( frame_index );
 	ClearTabularText();
+
+	if( frame.mFlags & FLAG_BREAK )
+	{
+		AddTabularText( "^ (Break)" );
+		return;
+	}
 
 	char number_str[128];
 	AnalyzerHelpers::GetNumberString( frame.mData1, display_base, 8, number_str, 128 );

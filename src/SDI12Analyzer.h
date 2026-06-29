@@ -7,6 +7,8 @@
 #include "SDI12SimulationDataGenerator.h"
 #include <memory>
 
+#define FLAG_BREAK ( 1 << 0 )
+
 enum AnalyzerState {
 	LOOKING_FOR_BREAK,
 	RECORDER_COMMAND,
@@ -21,9 +23,10 @@ public:
 
 	virtual void SetupResults();
 	virtual void WorkerThread();
-	virtual U8 ReadNextWord();
+	virtual bool ReadNextWord();
 	virtual bool AtMark();
 	virtual bool AdvanceToEndOfBreak();
+	void EmitBreakFrame( U64 starting_sample, U64 ending_sample );
 
 	virtual U32 GenerateSimulationData( U64 newest_sample_requested, U32 sample_rate, SimulationChannelDescriptor** simulation_channels );
 	virtual U32 GetMinimumSampleRateHz();
@@ -43,6 +46,7 @@ protected: //vars
 	U64 samples_per_half_bit;
 	U64 minimum_break_width;
 	U64 minimum_mark_width;
+	U64 timing_tolerance;
 };
 
 extern "C" ANALYZER_EXPORT const char* __cdecl GetAnalyzerName();
